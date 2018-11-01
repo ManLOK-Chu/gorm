@@ -453,6 +453,38 @@ func (s *DB) Raw(sql string, values ...interface{}) *DB {
 	return s.clone().search.Raw(true).Where(sql, values...).db
 }
 
+// RawMap sql查询返回[]map[string]string类型
+func (s *DB) ValueMap(sqlQuery string, sqlValues ...interface{}) (results []map[string]interface{}, err error) {
+	rows, err := s.Raw(sqlQuery, sqlValues...).Rows()
+	if err != nil {
+		return
+	}
+	cols, err := rows.ColumnTypes()
+	if err != nil {
+		return
+	}
+	values := make([]sql.RawBytes, len(cols))
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	for rows.Next() {
+		err = rows.Scan(scanArgs...)
+		if err != nil {
+			return
+		}
+
+		result := make(map[string]interface{}, len(cols))
+		for i, col := range values {
+			columnName := cols[i].Name()
+			columnType := cols[i].DatabaseTypeName()
+			result[columnName] = getRealValue(col, columnType)
+		}
+		results = append(results, result)
+	}
+	return
+}
+
 // Exec execute raw sql
 func (s *DB) Exec(sql string, values ...interface{}) *DB {
 	scope := s.NewScope(nil)

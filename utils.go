@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"reflect"
@@ -221,6 +222,19 @@ func getValueFromFields(value reflect.Value, fieldNames []string) (results []int
 func addExtraSpaceIfExist(str string) string {
 	if str != "" {
 		return " " + str
+	}
+	return ""
+}
+
+func getRealValue(rawValue sql.RawBytes, fieldType string) interface{} {
+	if rawValue == nil {
+		return nil
+	}
+	switch fieldType {
+	case "CHAR", "VARCHAR":
+		return string(rawValue)
+	case "INT":
+
 	}
 	return ""
 }
